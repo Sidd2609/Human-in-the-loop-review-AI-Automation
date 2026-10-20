@@ -45,7 +45,3 @@ All thresholds, weights, volumes, the 600-output synthetic population and the er
 |---|---|
 | `hitl_review_showcase.html` | The showcase page |
 | `prd.md` | Product requirements document |
-
-## Status
-
-The page has not yet been browser-tested end to end.
