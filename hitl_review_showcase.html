@@ -1,0 +1,1332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Human-in-the-Loop Review Showcase</title>
+<script>document.documentElement.className="js";</script>
+<style>
+:root{
+  --bg:#0a0a0f;--page-edge:#06070b;--surface-1:#12131c;--surface-2:#0d0e16;
+  --border:rgba(255,255,255,0.08);--border-strong:rgba(255,255,255,0.16);
+  --text-primary:#f5f5f7;--text-secondary:#9ca3af;--text-muted:#6b7280;
+  --accent:#3b82f6;--accent-soft:rgba(59,130,246,0.14);
+  --series-1:#3987e5;--series-2:#d95926;--series-3:#199e70;--series-4:#c98500;
+  --series-5:#d55181;--series-6:#008300;--series-7:#9085e9;--series-8:#e66767;
+  --t0:var(--series-3);--t1:var(--series-1);--t2:var(--series-4);--t3:var(--series-2);--t4:var(--series-8);--th:var(--series-7);
+  --ok:#3ecf9e;--warn:#e5a82b;--bad:#f08a8a;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:70px}
+body{margin:0;background:var(--bg);color:var(--text-primary);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.5;-webkit-text-size-adjust:100%}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* top bar */
+.topbar{position:sticky;top:0;z-index:30;background:var(--bg);border-bottom:1px solid var(--border)}
+.topbar-in{max-width:1180px;margin:0 auto;padding:9px 16px;display:flex;align-items:center;gap:14px}
+.brand{font-weight:800;font-size:13px;white-space:nowrap}
+.brand b{color:var(--accent)}
+.navlinks{display:flex;gap:2px;flex:1;overflow-x:auto;scrollbar-width:none}
+.navlinks::-webkit-scrollbar{display:none}
+.navlinks a{color:var(--text-secondary);text-decoration:none;font-size:12px;font-weight:600;padding:5px 10px;border-radius:999px;white-space:nowrap}
+.navlinks a:hover{color:var(--accent);background:var(--accent-soft)}
+.chip{display:inline-block;font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;white-space:nowrap;border:1px solid transparent}
+.chip.ok{color:var(--ok);background:rgba(25,158,112,.16);border-color:rgba(25,158,112,.35)}
+.chip.warn{color:var(--warn);background:rgba(201,133,0,.16);border-color:rgba(201,133,0,.35)}
+.chip.bad{color:var(--bad);background:rgba(230,103,103,.16);border-color:rgba(230,103,103,.35)}
+
+.viz-root{max-width:1180px;margin:0 auto;padding:36px 16px 70px}
+
+/* reveal */
+.js .reveal{opacity:0;transform:translateY(14px);transition:opacity .6s ease,transform .6s ease}
+.js .reveal.in{opacity:1;transform:none}
+.js .reveal:not(.in) .seg{width:0!important}
+
+/* head */
+.eyebrow-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.eyebrow{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.live-pill{font-size:10.5px;font-weight:700;color:var(--accent);background:var(--accent-soft);border:1px solid rgba(59,130,246,.3);padding:2px 9px;border-radius:999px}
+h1{font-size:30px;font-weight:800;letter-spacing:-.01em;margin:0 0 8px;line-height:1.2}
+h1 .live-pill{display:inline-block;vertical-align:middle;margin-left:6px;letter-spacing:0;white-space:nowrap}
+.subtitle{max-width:680px;color:var(--text-secondary);font-size:14.5px;margin:0 0 8px}
+.disclaimer{max-width:680px;color:var(--text-muted);font-size:12px;margin:0 0 16px}
+.pill-row{display:flex;gap:8px;flex-wrap:wrap}
+.btn{display:inline-block;font:inherit;font-size:12.5px;font-weight:600;color:var(--text-primary);background:var(--surface-1);border:1px solid var(--border-strong);border-radius:999px;padding:7px 15px;cursor:pointer;text-decoration:none}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.primary:hover{opacity:.9;color:#fff}
+.btn.small{font-size:11.5px;padding:5px 12px}
+.btn.ghost{background:transparent}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.btn.active{background:var(--accent-soft);border-color:rgba(59,130,246,.4);color:var(--accent)}
+
+/* kpis */
+.kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:26px 0 8px}
+.stat-tile{background:var(--surface-1);border:1px solid var(--border);border-radius:16px;padding:16px}
+.stat-tile .label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted)}
+.stat-tile .value{font-size:23px;font-weight:700;margin-top:4px;font-variant-numeric:tabular-nums}
+.stat-tile .caption{font-size:11px;color:var(--text-muted);margin-top:2px}
+.stat-tile.accent .value{color:var(--accent)}
+
+/* sections */
+.sec{margin-top:64px}
+.sec-eyebrow{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.sec-title{font-size:19px;font-weight:800;margin:4px 0 4px}
+.sec-hint{font-size:13px;color:var(--text-secondary);margin:0 0 18px;max-width:760px}
+.card{background:var(--surface-1);border:1px solid var(--border);border-radius:16px;padding:20px}
+.card.sub{background:var(--surface-2);border-radius:12px;padding:14px}
+.card h3{font-size:14.5px;margin:0 0 6px;font-weight:700}
+.card p{font-size:12.5px;color:var(--text-secondary);margin:0 0 10px}
+.footnote{font-size:11.5px;color:var(--text-muted);margin-top:12px}
+.callout{background:var(--accent-soft);border:1px solid rgba(59,130,246,.3);border-radius:14px;padding:14px 18px;margin-top:16px;font-size:14px;font-weight:600}
+.callout span{color:var(--text-secondary);font-weight:500;font-size:12px;display:block;margin-top:2px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.score-grid{grid-template-columns:minmax(300px,420px) 1fr;align-items:start}
+
+/* meters */
+.meter{position:relative;height:30px;background:var(--surface-2);border:1px solid var(--border);border-radius:9px;overflow:hidden;margin:8px 0 6px}
+.meter-fill{position:absolute;left:0;top:0;bottom:0;border-radius:8px;width:0;transition:width .9s cubic-bezier(.2,.8,.2,1)}
+.meter-cap{position:absolute;top:0;bottom:0;width:2px;background:var(--text-primary);transition:left .9s cubic-bezier(.2,.8,.2,1)}
+.meter-text{font-size:11.5px;color:var(--text-secondary)}
+.ticks{display:grid;grid-template-columns:repeat(12,1fr);gap:4px;margin:8px 0 6px}
+.ticks i{font-style:normal;text-align:center;font-size:12px;font-weight:700;color:var(--bad);background:rgba(230,103,103,.14);border-radius:6px;padding:3px 0;opacity:.15}
+.js .reveal.in .ticks i{animation:tickIn .35s ease forwards}
+@keyframes tickIn{from{opacity:.15;transform:scale(.6)}to{opacity:1;transform:none}}
+.prob-tag{display:inline-block;margin-bottom:8px}
+
+/* pipeline */
+.pipe{display:flex;align-items:stretch;gap:0}
+.stage-btn{flex:1;min-width:0;text-align:left;font:inherit;color:inherit;background:var(--surface-1);border:1px solid var(--border);border-radius:14px;padding:14px;cursor:pointer}
+.stage-btn:hover{border-color:var(--border-strong)}
+.stage-btn.on{border-color:rgba(59,130,246,.55);background:var(--accent-soft)}
+.stage-btn .n{font-size:10.5px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em}
+.stage-btn .nm{font-size:13.5px;font-weight:700;margin:2px 0 6px}
+.conn{flex:0 0 34px;position:relative;align-self:center;height:2px;background:var(--border-strong);overflow:hidden}
+.conn i{position:absolute;top:-2px;left:0;width:8px;height:6px;border-radius:4px;background:var(--accent);animation:flow 1.6s linear infinite}
+@keyframes flow{from{transform:translateX(-10px)}to{transform:translateX(36px)}}
+.stage-detail{margin-top:14px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:stretch;animation:fadeIn .4s ease}
+.stage-detail>div{background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:14px}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.dl-label{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:3px}
+.dl-val{font-size:12.5px;color:var(--text-secondary)}
+
+/* funnel / segs */
+.stream{position:relative;height:16px;margin-bottom:6px;overflow:hidden}
+.stream i{position:absolute;top:5px;width:6px;height:6px;border-radius:50%;background:var(--accent);opacity:0;animation:drift 5s linear infinite}
+@keyframes drift{0%{left:-2%;opacity:0}8%{opacity:.9}92%{opacity:.9}100%{left:102%;opacity:0}}
+.frow{margin-bottom:6px}
+.frow-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin:12px 0 5px;flex-wrap:wrap}
+.frow-title{font-size:12.5px;font-weight:700}
+.frow-sub{font-size:11.5px;color:var(--text-muted)}
+#funnelCard .frow-head{flex-direction:column;align-items:flex-start;gap:2px}
+.segbar{display:flex;height:40px;border-radius:9px;overflow:hidden;background:var(--surface-2);border:1px solid var(--border)}
+.seg{height:100%;display:flex;align-items:center;justify-content:center;overflow:hidden;white-space:nowrap;border-right:2px solid var(--surface-1);transition:width .9s cubic-bezier(.2,.8,.2,1)}
+.seg:last-child{border-right:0}
+.seg span{font-size:11px;font-weight:700;color:#fff}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:6px;font-size:11px;color:var(--text-secondary)}
+.legend b{color:var(--text-primary);font-variant-numeric:tabular-nums}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}
+.arrow{text-align:center;color:var(--text-muted);font-size:13px;margin:2px 0}
+
+/* formula / bars */
+.formula{font-family:ui-monospace,"Cascadia Code",Consolas,monospace;font-size:13px;background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:14px;color:var(--text-primary);overflow-x:auto}
+.formula em{color:var(--accent);font-style:normal}
+.barrow{display:grid;grid-template-columns:minmax(120px,1.2fr) 2fr 52px;gap:10px;align-items:center;margin:5px 0;font-size:12px}
+.barrow .lb{color:var(--text-secondary)}
+.btrack{height:10px;background:var(--surface-2);border:1px solid var(--border);border-radius:6px;overflow:hidden}
+.bfill{height:100%;border-radius:6px;background:var(--accent);width:0;transition:width .6s cubic-bezier(.2,.8,.2,1),background .3s}
+.barrow .vl{text-align:right;font-variant-numeric:tabular-nums;color:var(--text-primary);font-weight:600}
+.barrow.max .lb{color:var(--text-primary);font-weight:700}
+.barrow.max .bfill{background:var(--series-2)}
+.trace{list-style:none;margin:0 0 14px;padding:0}
+.trace li{display:flex;gap:10px;align-items:center;padding:7px 10px;border:1px solid var(--border);border-radius:10px;margin-bottom:5px;font-size:12px;background:var(--surface-2);transition:background .3s,border-color .3s}
+.trace li .ic{flex:0 0 20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:var(--ok);background:rgba(25,158,112,.16)}
+.trace li .tx{flex:1;color:var(--text-secondary)}
+.trace li .ac{font-weight:700;font-size:11px;color:var(--text-muted)}
+.trace li.fired{border-color:rgba(201,133,0,.5);background:rgba(201,133,0,.08)}
+.trace li.fired .ic{color:var(--warn);background:rgba(201,133,0,.2)}
+.trace li.fired .tx{color:var(--text-primary)}
+.trace li.fired .ac{color:var(--warn)}
+.trace li.block{border-color:rgba(230,103,103,.55);background:rgba(230,103,103,.08)}
+.trace li.block .ic{color:var(--bad);background:rgba(230,103,103,.2)}
+.trace li.block .ac{color:var(--bad)}
+.trace li.hold{border-color:rgba(144,133,233,.55);background:rgba(144,133,233,.08)}
+.trace li.hold .ic{color:var(--series-7);background:rgba(144,133,233,.2)}
+.trace li.hold .ac{color:var(--series-7)}
+.verdict{display:flex;gap:14px;align-items:center;flex-wrap:wrap;background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-top:10px}
+.verdict .big{font-size:30px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1}
+.verdict .cap{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600}
+.tierbadge{display:inline-block;font-size:12px;font-weight:700;padding:5px 12px;border-radius:999px;color:#fff;transition:background .3s}
+.why{font-size:12px;color:var(--text-secondary);margin-top:8px}
+
+/* inputs */
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:center;padding:5px 0}
+.field-row label{font-size:12px;color:var(--text-secondary)}
+.field-row label .unit{color:var(--text-muted);font-size:10.5px}
+.slider-pair{display:flex;gap:8px;align-items:center}
+.slider-pair input[type=range]{flex:1;min-width:0}
+input[type=range]{-webkit-appearance:none;appearance:none;height:4px;border-radius:2px;background:linear-gradient(to right,var(--accent) var(--pct,50%),var(--border-strong) var(--pct,50%));outline-offset:6px;margin:0;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;border-radius:50%;background:#fff;border:2px solid var(--accent)}
+input[type=range]::-moz-range-thumb{width:11px;height:11px;border-radius:50%;background:#fff;border:2px solid var(--accent)}
+input[type=number]{width:62px;font:inherit;font-size:max(16px,1em);font-variant-numeric:tabular-nums;color:var(--text-primary);background:var(--surface-2);border:1px solid var(--border-strong);border-radius:6px;padding:3px 5px}
+select{width:100%;font:inherit;font-size:max(16px,1em);color:var(--text-primary);background:var(--surface-2);border:1px solid var(--border-strong);border-radius:6px;padding:5px 6px}
+.readout{min-width:62px;text-align:right;font-size:12px;font-weight:700;font-variant-numeric:tabular-nums}
+.checkbox-row{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-secondary);padding:4px 0}
+.checkbox-row input{accent-color:var(--accent);width:15px;height:15px}
+.group-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin:14px 0 4px;padding-top:12px;border-top:1px solid var(--border)}
+.group-title:first-child{border-top:0;margin-top:0;padding-top:0}
+.warn-line{font-size:11.5px;color:var(--warn);margin-top:6px}
+
+/* simulator */
+.sim{display:grid;grid-template-columns:minmax(300px,400px) 1fr;gap:16px;align-items:start}
+.sim-ctl{max-height:none}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+.util-track{position:relative;height:16px;background:var(--surface-2);border:1px solid var(--border);border-radius:9px;overflow:hidden;margin:8px 0 6px}
+.util-fill{height:100%;border-radius:8px;width:0;transition:width .8s cubic-bezier(.2,.8,.2,1),background .3s}
+.util-mark{position:absolute;top:0;bottom:0;left:66.67%;width:2px;background:var(--text-primary)}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:12px 0}
+.tiles .stat-tile{padding:12px;border-radius:12px}
+.tiles .stat-tile .value{font-size:20px}
+.insight{background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;font-size:12.5px;color:var(--text-secondary);margin-top:10px}
+.insight b{color:var(--accent)}
+
+/* reviewer */
+.rv{display:grid;grid-template-columns:minmax(280px,1fr) 1.3fr;gap:14px}
+.qitem{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;width:100%;text-align:left;font:inherit;color:inherit;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:9px 11px;margin-bottom:6px;cursor:pointer;animation:fadeIn .35s ease}
+.qitem:hover{border-color:var(--border-strong)}
+.qitem.sel{border-color:rgba(59,130,246,.6);background:var(--accent-soft)}
+.qitem .q1{font-size:12px;font-weight:600}
+.qitem .q2{font-size:11px;color:var(--text-muted)}
+.qitem .age{font-size:11px;color:var(--text-muted);font-variant-numeric:tabular-nums}
+.tag{display:inline-block;font-size:10.5px;font-weight:800;padding:2px 9px;border-radius:999px;text-transform:uppercase;letter-spacing:.04em}
+.tag.High{color:var(--bad);background:rgba(230,103,103,.16)}
+.tag.Medium{color:var(--warn);background:rgba(201,133,0,.16)}
+.tag.Low{color:var(--ok);background:rgba(25,158,112,.16)}
+.copybox{background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:13px;margin:6px 0 12px}
+.copybox mark{background:rgba(201,133,0,.3);color:var(--text-primary);border-radius:3px;padding:0 2px}
+.ev{margin:0 0 12px;padding-left:18px;font-size:12px;color:var(--text-secondary)}
+.ev li{margin-bottom:3px}
+.decide{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.msg{font-size:11.5px;margin-top:8px;min-height:16px;color:var(--text-secondary)}
+.msg.err{color:var(--bad)}
+.logline{font-size:11.5px;color:var(--text-secondary);padding:3px 0;border-bottom:1px solid var(--border)}
+.empty{color:var(--text-muted);font-size:12.5px;padding:18px 4px;text-align:center}
+
+/* kill switch */
+.steps{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin:12px 0}
+.step{font-size:11px;font-weight:600;color:var(--text-muted);background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:8px;text-align:center;transition:all .4s}
+.step.on{color:var(--text-primary);background:var(--accent-soft);border-color:rgba(59,130,246,.5)}
+.ksgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.ksitem{background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:10px;font-size:11.5px;transition:background .5s,border-color .5s,transform .4s}
+.ksitem b{display:block;font-size:12px;margin-bottom:2px}
+.ksitem span{color:var(--text-muted)}
+.ksitem .st{display:block;margin-top:6px;font-weight:700;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--ok)}
+.ksitem.held{background:rgba(201,133,0,.1);border-color:rgba(201,133,0,.55);transform:scale(.98)}
+.ksitem.held .st{color:var(--warn)}
+.ksitem.queued{background:var(--accent-soft);border-color:rgba(59,130,246,.5)}
+.ksitem.queued .st{color:var(--accent)}
+
+/* prd */
+details{background:var(--surface-1);border:1px solid var(--border);border-radius:12px;margin-bottom:8px;padding:0 16px}
+summary{cursor:pointer;padding:12px 0;font-size:13.5px;font-weight:700;list-style:none;display:flex;gap:10px;align-items:center;justify-content:space-between}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";color:var(--accent);font-size:16px}
+details[open] summary::after{content:"\2212"}
+details ul{margin:0 0 12px;padding-left:0;list-style:none}
+details li{font-size:12.5px;color:var(--text-secondary);padding:4px 0;border-top:1px solid var(--border)}
+details li b{color:var(--accent);font-size:11.5px;margin-right:8px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chips span{font-size:11.5px;color:var(--text-secondary);background:var(--surface-2);border:1px solid var(--border);border-radius:999px;padding:3px 10px}
+.chips span b{color:var(--accent);margin-right:4px}
+.list-sm{margin:0;padding-left:18px;font-size:12.5px;color:var(--text-secondary)}
+.list-sm li{margin-bottom:3px}
+
+.tooltip{position:fixed;z-index:60;pointer-events:none;background:var(--text-primary);color:var(--bg);font-size:11.5px;font-weight:600;padding:5px 9px;border-radius:7px;max-width:220px;opacity:0;transition:opacity .08s}
+
+@media (max-width:980px){.kpi-row{grid-template-columns:repeat(3,1fr)}.ksgrid{grid-template-columns:repeat(3,1fr)}}
+@media (max-width:860px){
+  .sim,.rv{grid-template-columns:1fr}
+  .grid3,.grid2,.score-grid{grid-template-columns:1fr}
+  .navlinks{display:none}
+  .topbar-in{justify-content:space-between}
+}
+@media (max-width:760px){.field-row{grid-template-columns:1fr}.steps{grid-template-columns:repeat(3,1fr)}.stage-detail{grid-template-columns:1fr}}
+@media (max-width:640px){
+  h1{font-size:24px}
+  .pipe{flex-direction:column}
+  .conn{flex:0 0 22px;width:2px;height:22px;align-self:center}
+  .conn i{left:-2px;top:0;width:6px;height:8px;animation:flowv 1.6s linear infinite}
+  .stage-detail{grid-template-columns:1fr}
+  .tiles{grid-template-columns:1fr 1fr}
+  .ksgrid{grid-template-columns:1fr 1fr}
+  .barrow{grid-template-columns:1fr 1.4fr 46px}
+}
+@keyframes flowv{from{transform:translateY(-10px)}to{transform:translateY(24px)}}
+@media (max-width:560px){.kpi-row{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:400px){.kpi-row{grid-template-columns:1fr}.tiles{grid-template-columns:1fr}}
+@media (pointer:coarse){
+  input[type=range]{height:6px}
+  input[type=range]::-webkit-slider-thumb{width:24px;height:24px}
+  input[type=range]::-moz-range-thumb{width:20px;height:20px}
+  .btn{padding:10px 16px}
+  .btn.small{padding:9px 14px}
+  .navlinks a{padding:9px 12px}
+  .checkbox-row input{width:20px;height:20px}
+  .field-row{padding:8px 0}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+  .js .reveal{opacity:1!important;transform:none!important}
+  .ticks i{opacity:1!important}
+}
+</style>
+</head>
+<body>
+<noscript><p style="padding:16px">This page needs JavaScript for the animations and the simulator.</p></noscript>
+
+<div class="topbar"><div class="topbar-in">
+  <div class="brand"><b>HITL</b> Review Showcase</div>
+  <nav class="navlinks" aria-label="Sections">
+    <a href="#problem">Problem</a><a href="#pipeline">Pipeline</a><a href="#shortlist">Shortlisting</a>
+    <a href="#scoring">Scoring</a><a href="#reviewer">Reviewer</a><a href="#killswitch">Kill switch</a>
+    <a href="#prd">Sample PRD</a><a href="#simulator">Simulator</a>
+  </nav>
+  <span class="chip ok" id="topChip">Load —</span>
+</div></div>
+
+<div class="viz-root">
+
+<header class="reveal" id="top">
+  <h1>Human in the Loop Review in AI Automation <span class="live-pill">Interactive</span></h1>
+  <p class="subtitle">How an AI content pipeline decides which outputs a human must check &mdash; and which can safely proceed &mdash; so review stays real and never becomes the bottleneck.</p>
+  <p class="disclaimer">All thresholds, weights, volumes and the output population on this page are illustrative defaults from the scoring-formula discussion, not calibrated or confirmed values. Every input is editable.</p>
+  <div class="pill-row"><a class="btn primary" href="#simulator">Jump to the simulator</a><a class="btn" href="#prd">Sample PRD</a></div>
+</header>
+
+<div class="kpi-row reveal">
+  <div class="stat-tile"><div class="label">Pipeline stages</div><div class="value" id="kStages">0</div><div class="caption">idea to distribution</div></div>
+  <div class="stat-tile accent"><div class="label">Auto-approve rate</div><div class="value" id="kAuto">0%</div><div class="caption">live, from the simulator</div></div>
+  <div class="stat-tile accent"><div class="label">Reviewer load</div><div class="value" id="kLoad">0%</div><div class="caption" id="kLoadCap">of review capacity</div></div>
+</div>
+
+<!-- PROBLEM -->
+<section class="sec" id="problem">
+  <div class="sec-eyebrow">The problem</div>
+  <h2 class="sec-title">Can humans check every AI output?</h2>
+  <p class="sec-hint">Fully automated AI at scale will make errors, and people cannot review everything. Review everything and you create a bottleneck; ask too much of reviewers and they become passive approvers. The aim is to spend a fixed review budget on the outputs that carry the most risk.</p>
+  <div class="grid3 reveal">
+    <div class="card">
+      <span class="chip bad prob-tag">Bottleneck</span>
+      <h3>Review everything</h3>
+      <p>Every output needs a human. The queue outgrows the people available.</p>
+      <div class="meter"><div class="meter-fill" id="mAFill" style="background:var(--series-8)"></div><div class="meter-cap" id="mACap"></div></div>
+      <div class="meter-text" id="mAText">&nbsp;</div>
+    </div>
+    <div class="card">
+      <span class="chip warn prob-tag">Rubber-stamping</span>
+      <h3>Approve without checking</h3>
+      <p>Volume pushes reviewers into approving faster than they can read. Oversight exists on paper only.</p>
+      <div class="ticks" aria-hidden="true" id="ticks"></div>
+      <div class="meter-text">Approvals faster than reading time and unbroken approval streaks.</div>
+    </div>
+    <div class="card" style="border-color:rgba(59,130,246,.45)">
+      <span class="chip ok prob-tag">Review by risk</span>
+      <h3>Route to the risky tail</h3>
+      <p>Most outputs auto-pass. Humans see the risky tail plus a calibration sample.</p>
+      <div class="meter"><div class="meter-fill" id="mCFill" style="background:var(--series-3)"></div><div class="meter-cap" id="mCCap"></div></div>
+      <div class="meter-text" id="mCText">&nbsp;</div>
+    </div>
+  </div>
+  <div class="callout reveal">Route by risk, not by default. Hard gates override scores. Reviewers are shown evidence, not verdicts.<span>The core principle behind the whole design. The white line on the bars marks available review capacity; both bars use the same scale and follow your simulator inputs.</span></div>
+</section>
+
+<!-- PIPELINE -->
+<section class="sec" id="pipeline">
+  <div class="sec-eyebrow">The pipeline</div>
+  <h2 class="sec-title">Five AI stages, five different review postures</h2>
+  <p class="sec-hint">Checks compound across stages. If audience attributes are hard-gated, content creation can run more autonomously; the strictest gate sits at distribution, where an output becomes irreversible. Select a stage.</p>
+  <div class="card reveal">
+    <div class="pipe" id="pipe"></div>
+    <div class="stage-detail" id="stageDetail"></div>
+  </div>
+</section>
+
+<!-- SHORTLIST -->
+<section class="sec" id="shortlist">
+  <div class="sec-eyebrow">How outputs are shortlisted</div>
+  <h2 class="sec-title">Three layers decide who gets a human</h2>
+  <p class="sec-hint">Layer 1 hard gates ignore confidence entirely. Layer 2 scores what is left on likelihood of error times impact. Layer 3 pulls a random sample of what was auto-approved. Counts are per day and follow the simulator inputs below.</p>
+  <div class="card reveal" id="funnelCard">
+    <div class="stream" aria-hidden="true" id="stream"></div>
+    <div class="frow"><div class="frow-head"><span class="frow-title">Outputs produced per day</span><span class="frow-sub" id="fTotal"></span></div>
+      <div class="segbar" id="fTop"></div></div>
+    <div class="arrow">&#9660;</div>
+    <div class="frow"><div class="frow-head"><span class="frow-title">Layer 1 &middot; hard gates</span><span class="frow-sub">block, hold or force a tier regardless of score</span></div>
+      <div class="segbar" id="fGate"></div><div class="legend" id="fGateLeg"></div></div>
+    <div class="arrow">&#9660;</div>
+    <div class="frow"><div class="frow-head"><span class="frow-title">Layer 2 &middot; risk score to tier</span><span class="frow-sub">final tier after gates and score</span></div>
+      <div class="segbar" id="fTier"></div><div class="legend" id="fTierLeg"></div></div>
+    <div class="arrow">&#9660;</div>
+    <div class="frow"><div class="frow-head"><span class="frow-title">Layer 3 &middot; what a human actually looks at</span><span class="frow-sub" id="fHumanSub"></span></div>
+      <div class="segbar" id="fHuman"></div><div class="legend" id="fHumanLeg"></div></div>
+    <div class="footnote">Synthetic population of 600 outputs, scaled to your daily volume. Tier 4 and held outputs need no review time here; they are blocked or suppressed.</div>
+  </div>
+</section>
+
+<!-- SCORING -->
+<section class="sec" id="scoring">
+  <div class="sec-eyebrow">Scoring one output</div>
+  <h2 class="sec-title">Why did this output land in this tier?</h2>
+  <p class="sec-hint">Edit a single output on the left. The gates are checked first; the score only decides what the gates leave open. Try a high-confidence output that states a price: it still goes to a specialist.</p>
+  <div class="grid2 score-grid reveal">
+    <div class="card"><div id="ctlItem"></div></div>
+    <div class="card">
+      <div class="formula">Risk = 100 &times; <em>P(error)</em> &times; <em>Impact</em><br>P(error) = 1 &minus; &Pi;(1 &minus; w<sub>i</sub>&middot;s<sub>i</sub>) &nbsp;&nbsp; Impact = max(reach, money, reversibility, entity, visibility)</div>
+      <div class="group-title">Step 1 &middot; hard gates</div>
+      <ul class="trace" id="trace"></ul>
+      <div class="group-title">Step 2 &middot; likelihood of error</div>
+      <div id="pBars"></div>
+      <div class="group-title">Step 3 &middot; impact (the largest dimension wins)</div>
+      <div id="iBars"></div>
+      <div class="verdict">
+        <div><div class="cap">P(error)</div><div class="big" id="vP">0</div></div>
+        <div><div class="cap">Impact</div><div class="big" id="vI">0</div></div>
+        <div><div class="cap">Risk</div><div class="big" id="vR">0</div></div>
+        <div style="flex:1;min-width:180px"><span class="tierbadge" id="vTier">Tier</span><div class="why" id="vWhy"></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- REVIEWER -->
+<section class="sec" id="reviewer">
+  <div class="sec-eyebrow">The reviewer experience</div>
+  <h2 class="sec-title">Evidence, not a verdict &mdash; and a decision, not a click</h2>
+  <p class="sec-hint">Held items arrive tagged High, Medium or Low so reviewers can prioritise. They see why the item was flagged and the supporting evidence, with no AI approve/reject recommendation. Edit and reject need a reason. Try approving several items quickly.</p>
+  <div class="card reveal">
+    <div class="rv">
+      <div>
+        <div class="frow-head" style="margin-top:0"><span class="frow-title">Reviewer queue</span><span class="frow-sub" id="qCounts"></span></div>
+        <div id="queueList"></div>
+      </div>
+      <div>
+        <div id="qDetail"></div>
+        <div class="group-title">Reviewer activity</div>
+        <div class="legend" id="rvStats"></div>
+        <div class="msg" id="rvAlert"></div>
+        <div id="rvLog"></div>
+      </div>
+    </div>
+    <div class="footnote">Sample copy and policy evidence are illustrative mock-ups; the queue itself is drawn from the simulator's synthetic population and re-sorts as you change inputs.</div>
+  </div>
+</section>
+
+<!-- KILL SWITCH -->
+<section class="sec" id="killswitch">
+  <div class="sec-eyebrow">The kill switch</div>
+  <h2 class="sec-title">When the world changes, scheduled content must stop</h2>
+  <p class="sec-hint">An external event can make scheduled content inappropriate. An authorised user suppresses a campaign (or all campaigns); its scheduled sends are held at once, owners are told, and on lift the held outputs are re-scored rather than sent.</p>
+  <div class="card reveal">
+    <div class="tabs">
+      <label class="frow-sub" for="ksScope">Suppress</label>
+      <select id="ksScope" style="width:auto;min-width:200px"></select>
+      <button class="btn primary small" id="ksTrigger" type="button">Trigger suppression</button>
+      <label class="frow-sub" for="ksLiftScope">Lift</label>
+      <select id="ksLiftScope" style="width:auto;min-width:200px"></select>
+      <button class="btn small" id="ksLift" type="button" disabled>Lift suppression</button>
+      <button class="btn ghost small" id="ksReset" type="button">Reset</button>
+    </div>
+    <div class="steps" id="ksSteps"></div>
+    <div class="ksgrid" id="ksGrid"></div>
+    <div class="msg" id="ksMsg"></div>
+    <div id="ksLog"></div>
+  </div>
+</section>
+
+<!-- PRD -->
+<section class="sec" id="prd">
+  <div class="sec-eyebrow">Sample PRD</div>
+  <p class="sec-hint">The shape of the specification: the areas it covers and the four user journeys.</p>
+  <div class="grid2 reveal" style="align-items:start">
+    <div>
+      <div class="group-title" style="border-top:0;margin-top:0;padding-top:0">Requirement areas</div>
+      <div id="areas"></div>
+    </div>
+    <div>
+      <div class="group-title" style="border-top:0;margin-top:0;padding-top:0">User journeys</div>
+      <div id="journeys"></div>
+    </div>
+  </div>
+</section>
+
+<!-- SIMULATOR -->
+<section class="sec" id="simulator">
+  <div class="sec-eyebrow">The simulator</div>
+  <h2 class="sec-title">What happens to review load when the rules change?</h2>
+  <p class="sec-hint">Change volume, capacity, thresholds, sampling, signal weights or impact scales. Every section above updates. Switch presets to see the same platform configured for a different business.</p>
+  <div class="tabs">
+    <button class="btn active" type="button" data-preset="airline">Airline CMS</button>
+    <button class="btn" type="button" data-preset="retail">Retail marketplace</button>
+    <button class="btn ghost small" type="button" id="resetBtn">Reset to defaults</button>
+  </div>
+  <div class="sim reveal">
+    <div class="card sim-ctl">
+      <div class="group-title">Volume and reviewer capacity</div><div id="ctlVolume"></div>
+      <div class="group-title">Tier thresholds (risk score)</div><div id="ctlThresh"></div>
+      <div class="group-title">Sampling and seeded errors</div><div id="ctlSamp"></div>
+      <div class="group-title">Signal weights</div><div id="ctlWeights"></div>
+      <div class="group-title">Impact scales and gates</div><div id="ctlImpact"></div>
+    </div>
+    <div class="card">
+      <div class="frow-head" style="margin-top:0"><span class="frow-title">Review budget</span><span class="chip ok" id="simStatus">&mdash;</span></div>
+      <div class="util-track"><div class="util-fill" id="utilFill"></div><div class="util-mark"></div></div>
+      <div class="meter-text" id="utilText">&nbsp;</div>
+      <div class="tiles">
+        <div class="stat-tile"><div class="label">Human items / day</div><div class="value" id="sHuman">0</div><div class="caption" id="sHumanCap"></div></div>
+        <div class="stat-tile"><div class="label">Reviewers needed</div><div class="value" id="sNeed">0</div><div class="caption" id="sNeedCap"></div></div>
+        <div class="stat-tile"><div class="label">Auto-approve rate</div><div class="value" id="sAuto">0%</div><div class="caption">tier 0 and tier 1</div></div>
+        <div class="stat-tile"><div class="label">Queue: high priority</div><div class="value" id="sHigh">0</div><div class="caption">items / day</div></div>
+        <div class="stat-tile"><div class="label">Queue: medium</div><div class="value" id="sMed">0</div><div class="caption">items / day</div></div>
+        <div class="stat-tile"><div class="label">Queue: low</div><div class="value" id="sLow">0</div><div class="caption">items / day</div></div>
+        <div class="stat-tile"><div class="label">Errors stopped before send</div><div class="value" id="sStop">0</div><div class="caption">illustrative, per day</div></div>
+        <div class="stat-tile"><div class="label">Errors reaching customers</div><div class="value" id="sEsc">0</div><div class="caption">illustrative, per day</div></div>
+        <div class="stat-tile"><div class="label">Share of errors escaping</div><div class="value" id="sEscPct">0%</div><div class="caption">illustrative</div></div>
+      </div>
+      <div class="frow-head"><span class="frow-title">Tier mix</span></div>
+      <div class="segbar" id="sTier"></div><div class="legend" id="sTierLeg"></div>
+      <div class="insight" id="insight"></div>
+      <div class="footnote">Error figures assume a hidden "true error" rate that rises with the same signals, and that reviewers catch every error in what they review. They are illustrative only, not a measured or promised rate; the acceptable error rate is still an open decision.</div>
+    </div>
+  </div>
+</section>
+
+<p class="footnote" style="margin-top:44px">Source: &ldquo;Human in the Loop Review in AI Automation&rdquo;, owner Siddharth Agarwal. Weights, thresholds and priority bands are priors to be calibrated in shadow mode; the High / Medium / Low band boundaries are still an open decision. Sample copy, campaign names and policy evidence are invented for illustration.</p>
+</div>
+
+<div class="tooltip" id="tip"></div>
+
+<script>
+(function () {
+"use strict";
+
+/* ------------------------------------------------------------------ */
+/* Core: pure model (no DOM)                                           */
+/* ------------------------------------------------------------------ */
+var WKEYS = ["judge", "cons", "pol", "nov", "chk", "tmpl"];
+var WLABELS = {
+  judge: "Model uncertainty", cons: "Regenerations disagree", pol: "Policy / RAG ambiguity",
+  nov: "Novelty vs approved content", chk: "Independent checker disagrees", tmpl: "Weak template history"
+};
+var DEFAULT_W = { judge: 0.35, cons: 0.2, pol: 0.25, nov: 0.1, chk: 0.3, tmpl: 0.15 };
+var TIER_NAMES = ["Tier 0 · Auto-approve", "Tier 1 · Auto-approve + sample", "Tier 2 · Reviewer queue",
+  "Tier 3 · Specialist review", "Tier 4 · Block", "Held · Suppressed"];
+var TIER_COLORS = ["var(--t0)", "var(--t1)", "var(--t2)", "var(--t3)", "var(--t4)", "var(--th)"];
+var STAGES = ["Idea filtering", "Audience understanding", "Content creation", "Governance & approval", "Distribution"];
+
+var PRESETS = {
+  airline: {
+    name: "Airline CMS", seed: 20261017,
+    labels: { claim: "Fare, miles or entitlement claim", off: "Off-limits targeting attribute (health, bereavement, minors)", dis: "Active disruption or incident", ent: "Tier-member exposure" },
+    claimOpts: [["0", "None"], ["0.5", "Discount or perk"], ["0.8", "Fare or miles value"], ["1", "Compensation or legal entitlement"]],
+    entOpts: [["0.2", "General audience"], ["0.6", "Top-tier members or recent complainants"], ["1", "Vulnerable segment"]],
+    ksItems: [
+      ["Transatlantic flash sale", "420k", "Email"], ["Business upgrade offer", "38k", "Push"],
+      ["Gold member miles bonus", "150k", "Push"], ["Monsoon getaway teaser", "600k", "Email"],
+      ["Sydney summer fares", "280k", "Email"], ["Lounge access promo", "45k", "SMS"],
+      ["Gulf-to-London weekend deal", "330k", "Push"], ["Family fare bundle", "90k", "Email"],
+      ["Tier-match loyalty offer", "22k", "Email"], ["Winter city breaks", "510k", "Email"]],
+    snippets: {
+      ver: ["Fly to Lisbon this winter from <mark>£189 return</mark> and earn bonus miles on every booking.", "Stated fare must be verified; value claims need specialist sign-off."],
+      lex: ["Book now and your upgrade is <mark>guaranteed</mark> on every Gold flight.", "Matched term in the regulated-claim lexicon: “guaranteed”."],
+      ppos: ["Members get priority boarding on <mark>all partner flights</mark>.", "Retrieved policy clause (example): benefits apply to own-brand flights only."],
+      nw: ["Introducing our new summer route to Osaka. Discover the sights, the food, the culture.", "Template has fewer reviewed outputs than the new-item review count."],
+      sig: ["Escape the cold: weekend city breaks, <mark>handpicked for you</mark>.", "No hard gate fired; the combination of signals and impact put it in the queue."]
+    },
+    mix: { pClaim: 0.1, unv: 0.1, pLex: 0.06, pOff: 0.012, pDis: 0.012, pPolDef: 0.012, pPolPos: 0.07, pNew: 0.04, reachLo: 2.7, reachSpan: 3.9, entHi: 0.05, entMid: 0.15 },
+    vol: { perDay: 20000, reviewers: 14, hours: 6, minPer: 2, specX: 2.5 }
+  },
+  retail: {
+    name: "Retail marketplace", seed: 20261018,
+    labels: { claim: "Price, discount or deal claim", off: "Sensitive-category inference (health, pregnancy, finances)", dis: "Recalled or restricted product", ent: "Sensitive-category exposure" },
+    claimOpts: [["0", "None"], ["0.5", "Promo or coupon"], ["0.8", "Price or deal claim"], ["1", "Warranty or refund guarantee"]],
+    entOpts: [["0.2", "General audience"], ["0.6", "Sensitive-category inference"], ["1", "Minors or vulnerable shoppers"]],
+    ksItems: [
+      ["Spring home deals", "380k", "Email"], ["Back-in-stock alerts", "60k", "Push"],
+      ["Electronics weekend sale", "700k", "Email"], ["Loyalty member prices", "120k", "Push"],
+      ["Kitchen essentials", "240k", "Email"], ["Fitness bundles", "55k", "SMS"],
+      ["Back-to-school picks", "310k", "Push"], ["Gift guide", "95k", "Email"],
+      ["Clearance countdown", "26k", "Email"], ["Pet supplies deals", "410k", "Email"]],
+    snippets: {
+      ver: ["Save 40% today — <mark>lowest price on the web</mark>.", "Stated price must match the live catalogue; deal claims need specialist sign-off."],
+      lex: ["<mark>Clinically proven</mark> to ease back pain. Free shipping.", "Matched term in the regulated-claim lexicon: “clinically proven”."],
+      ppos: ["Recommended because you shopped for <mark>sleep aids</mark> last week.", "Retrieved policy clause (example): health-adjacent browsing must not drive named recommendations."],
+      nw: ["Meet the new autumn collection from a seller new to the platform.", "Seller and template have fewer reviewed outputs than the new-item review count."],
+      sig: ["Picked for you: <mark>top-rated</mark> under your budget.", "No hard gate fired; the combination of signals and impact put it in the queue."]
+    },
+    mix: { pClaim: 0.15, unv: 0.07, pLex: 0.04, pOff: 0.025, pDis: 0.008, pPolDef: 0.01, pPolPos: 0.06, pNew: 0.06, reachLo: 2.5, reachSpan: 3.2, entHi: 0.04, entMid: 0.2 },
+    vol: { perDay: 60000, reviewers: 36, hours: 6, minPer: 2, specX: 2.5 }
+  }
+};
+
+function clamp(x, a, b) { return Math.max(a, Math.min(b, x)); }
+function copy(o) { return JSON.parse(JSON.stringify(o)); }
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    var t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function makeState(key) {
+  var P = PRESETS[key];
+  return {
+    preset: key, labels: P.labels,
+    volume: copy(P.vol),
+    thresholds: { t1: 3, t2: 8, t3: 20, t4: 40, med: 12, high: 20 },
+    sampling: { t0: 2, t1: 8, seeded: 2 },
+    weights: copy(DEFAULT_W),
+    impact: { minImp: 0.1, reachX: 1, moneyX: 1 },
+    flags: { earned: 0 },
+    item: { audLog: 5.9, claim: 0, verified: 1, chan: 0.2, ent: 0.2, vis: 0.2, lex: 0, off: 0, dis: 0, newT: 0, pol: 0, conf: 80, cons: 10, chk: 0, nov: 40, tmpl: 10 }
+  };
+}
+
+function reachValue(audLog) {
+  var pts = [[3, 0.1], [4.699, 0.4], [5.699, 0.7], [6.699, 1]];
+  if (audLog <= pts[0][0]) return pts[0][1];
+  for (var i = 1; i < pts.length; i++) {
+    if (audLog <= pts[i][0]) {
+      var a = pts[i - 1], b = pts[i];
+      return a[1] + (b[1] - a[1]) * (audLog - a[0]) / (b[0] - a[0]);
+    }
+  }
+  return 1;
+}
+
+function pError(s, w) {
+  var keep = 1;
+  for (var i = 0; i < WKEYS.length; i++) {
+    var k = WKEYS[i];
+    keep *= 1 - clamp(w[k] * s[k], 0, 1);
+  }
+  return 1 - keep;
+}
+
+function impactOf(it, st) {
+  var d = {
+    reach: clamp(reachValue(it.audLog) * st.impact.reachX, 0, 1),
+    money: it.claim > 0 ? clamp(it.claim * st.impact.moneyX, 0, 1) : 0.1,
+    rev: it.chan, ent: it.ent, vis: it.vis
+  };
+  var m = Math.max(d.reach, d.money, d.rev, d.ent, d.vis, st.impact.minImp);
+  return { dims: d, value: m };
+}
+
+function normTh(t) {
+  var a = t.t1, b = Math.max(t.t2, a), c = Math.max(t.t3, b), d = Math.max(t.t4, c);
+  return { t1: a, t2: b, t3: c, t4: d, med: t.med, high: t.high };
+}
+function thOk(t) { return t.t1 <= t.t2 && t.t2 <= t.t3 && t.t3 <= t.t4; }
+
+function gateTrace(it, st) {
+  var L = st.labels, claimed = it.claim > 0;
+  return [
+    { id: "unv", label: L.claim + " fails verification", fired: claimed && !it.verified, action: "Block", eff: "block" },
+    { id: "ver", label: L.claim + " (verified): specialist sign-off", fired: claimed && !!it.verified && !st.flags.earned, action: "Tier 3 minimum", eff: 3 },
+    { id: "off", label: L.off, fired: !!it.off, action: "Block", eff: "block" },
+    { id: "pdef", label: "Policy check: definite violation", fired: it.pol >= 1, action: "Block", eff: "block" },
+    { id: "ppos", label: "Policy check: possible violation", fired: it.pol > 0 && it.pol < 1, action: "Tier 2 minimum", eff: 2 },
+    { id: "dis", label: L.dis, fired: !!it.dis, action: "Suppress / hold", eff: "hold" },
+    { id: "lex", label: "Regulated-claim lexicon hit", fired: !!it.lex, action: "Tier 3 minimum", eff: 3 },
+    { id: "nw", label: "New template, segment or model", fired: !!it.newT, action: "Tier 2 minimum", eff: 2 }
+  ];
+}
+
+function route(it, st) {
+  var tr = gateTrace(it, st), block = false, hold = false, minT = 0, i, g;
+  for (i = 0; i < tr.length; i++) {
+    g = tr[i];
+    if (!g.fired) continue;
+    if (g.eff === "block") block = true;
+    else if (g.eff === "hold") hold = true;
+    else minT = Math.max(minT, g.eff);
+  }
+  var th = normTh(st.thresholds);
+  var P = pError(it.s, st.weights), imp = impactOf(it, st), risk = 100 * P * imp.value;
+  var scoreTier = risk < th.t1 ? 0 : risk < th.t2 ? 1 : risk < th.t3 ? 2 : risk < th.t4 ? 3 : 4;
+  var tier, gate;
+  if (block) { tier = 4; gate = "block"; }
+  else if (hold) { tier = 5; gate = "hold"; }
+  else { tier = Math.max(scoreTier, minT); gate = minT > 0 ? "force" : "pass"; }
+  var tag = null;
+  if (tier === 2 || tier === 3) {
+    var eff = Math.max(risk, tier === 2 ? th.t2 : th.t3);
+    tag = (tier === 3 || eff >= th.high) ? "High" : eff >= th.med ? "Medium" : "Low";
+  }
+  var contribs = WKEYS.map(function (k) { return { k: k, v: clamp(st.weights[k] * it.s[k], 0, 1) }; })
+    .sort(function (a, b) { return b.v - a.v; });
+  return { trace: tr, P: P, imp: imp, risk: risk, scoreTier: scoreTier, tier: tier, gate: gate, tag: tag, contribs: contribs, minT: minT };
+}
+
+function testerItem(st) {
+  var i = st.item;
+  return {
+    audLog: i.audLog, claim: i.claim, verified: i.verified, chan: i.chan, ent: i.ent, vis: i.vis,
+    lex: i.lex, off: i.off, dis: i.dis, newT: i.newT, pol: i.pol,
+    s: { judge: 1 - i.conf / 100, cons: i.cons / 100, pol: i.pol, nov: i.nov / 100, chk: i.chk / 100, tmpl: i.tmpl / 100 }
+  };
+}
+
+function genPop(mix, n, seed) {
+  var rnd = mulberry32(seed), pop = [];
+  var stageW = [0.12, 0.15, 0.4, 0.13, 0.2];
+  for (var i = 0; i < n; i++) {
+    var it = { id: i }, r;
+    r = rnd(); it.stage = 0;
+    var acc = 0;
+    for (var k = 0; k < stageW.length; k++) { acc += stageW[k]; if (r < acc) { it.stage = k; break; } }
+    it.audLog = mix.reachLo + mix.reachSpan * Math.pow(rnd(), 1.4);
+    if (rnd() < mix.pClaim) { r = rnd(); it.claim = r < 0.5 ? 0.5 : r < 0.85 ? 0.8 : 1; } else it.claim = 0;
+    it.verified = it.claim > 0 ? (rnd() >= mix.unv ? 1 : 0) : 1;
+    r = rnd(); it.chan = r < 0.5 ? 0.2 : r < 0.65 ? 0.5 : r < 0.92 ? 0.8 : 1;
+    r = rnd(); it.ent = r < mix.entHi ? 1 : r < mix.entHi + mix.entMid ? 0.6 : 0.2;
+    r = rnd(); it.vis = r < 0.03 ? 1 : r < 0.15 ? 0.7 : 0.2;
+    it.lex = rnd() < mix.pLex ? 1 : 0;
+    it.off = rnd() < mix.pOff ? 1 : 0;
+    it.dis = rnd() < mix.pDis ? 1 : 0;
+    r = rnd(); it.pol = r < mix.pPolDef ? 1 : r < mix.pPolDef + mix.pPolPos ? 0.5 : 0;
+    it.newT = rnd() < mix.pNew ? 1 : 0;
+    it.s = {
+      judge: 0.02 + 0.4 * Math.pow(rnd(), 2.5), cons: 0.3 * Math.pow(rnd(), 3), pol: it.pol,
+      nov: 0.5 * Math.pow(rnd(), 2.5), chk: rnd() < 0.05 ? 0.4 + 0.6 * rnd() : 0, tmpl: 0.2 * Math.pow(rnd(), 2)
+    };
+    it.err = rnd() < 0.005 + 0.55 * pError(it.s, DEFAULT_W);
+    pop.push(it);
+  }
+  return pop;
+}
+
+function simulate(pop, st) {
+  var N = pop.length, scale = st.volume.perDay / N;
+  var cnt = [0, 0, 0, 0, 0, 0], gates = { pass: 0, force: 0, block: 0, hold: 0 };
+  var tags = { High: 0, Medium: 0, Low: 0 };
+  var errs = [0, 0, 0, 0, 0, 0], totalErr = 0, items = [];
+  for (var i = 0; i < N; i++) {
+    var r = route(pop[i], st);
+    cnt[r.tier]++; gates[r.gate]++;
+    if (r.tag) tags[r.tag]++;
+    if (pop[i].err) { errs[r.tier]++; totalErr++; }
+    items.push({ id: i, it: pop[i], r: r });
+  }
+  var d = cnt.map(function (c) { return c * scale; });
+  var g = { pass: gates.pass * scale, force: gates.force * scale, block: gates.block * scale, hold: gates.hold * scale };
+  var s0 = d[0] * st.sampling.t0 / 100, s1 = d[1] * st.sampling.t1 / 100;
+  var seeded = (d[2] + d[3]) * st.sampling.seeded / 100;
+  var human = d[2] + d[3] + s0 + s1 + seeded;
+  var m = st.volume.minPer;
+  var minutes = (d[2] + s0 + s1 + seeded) * m + d[3] * m * st.volume.specX;
+  var capMin = st.volume.reviewers * st.volume.hours * 60;
+  var perRev = st.volume.hours * 60;
+  var allMin = st.volume.perDay * m;
+  var util = capMin > 0 ? minutes / capMin : 9;
+  var status = util < 0.8 ? "ok" : util <= 1 ? "warn" : "bad";
+  var stopped = (errs[2] + errs[3] + errs[4] + errs[5]) * scale;
+  var escaped = (errs[0] + errs[1]) * scale;
+  var allErr = totalErr * scale;
+  return {
+    N: N, scale: scale, d: d, g: g, s0: s0, s1: s1, seeded: seeded, human: human, minutes: minutes, capMin: capMin, allMin: allMin,
+    util: util, status: status, need: Math.ceil(minutes / perRev), needAll: Math.ceil(allMin / perRev),
+    auto: (cnt[0] + cnt[1]) / N, tags: { High: tags.High * scale, Medium: tags.Medium * scale, Low: tags.Low * scale },
+    stopped: stopped, escaped: escaped, escPct: allErr > 0 ? escaped / allErr : 0, items: items
+  };
+}
+
+var Core = { PRESETS: PRESETS, makeState: makeState, genPop: genPop, simulate: simulate, route: route, testerItem: testerItem, pError: pError, impactOf: impactOf, normTh: normTh };
+if (typeof module !== "undefined" && module.exports) { module.exports = Core; }
+if (typeof document === "undefined") { return; }
+
+/* ------------------------------------------------------------------ */
+/* UI                                                                  */
+/* ------------------------------------------------------------------ */
+var REDUCED = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+var state, pop, R = null;
+
+function $(id) { return document.getElementById(id); }
+function fmtInt(n) { return Math.round(n).toLocaleString(); }
+function fmtPct(n) { return Math.round(n) + "%"; }
+function fmt1(n) { return (Math.round(n * 10) / 10).toLocaleString(); }
+function fmtAud(log) {
+  var n = Math.pow(10, log);
+  if (n >= 1e6) return (n / 1e6).toFixed(1) + "M";
+  if (n >= 1e3) return Math.round(n / 1e3) + "k";
+  return Math.round(n) + "";
+}
+function pct(v, min, max) { return clamp((v - min) / (max - min) * 100, 0, 100); }
+
+function countUp(el, to, fmt) {
+  fmt = fmt || fmtInt;
+  var from = el._v == null ? 0 : el._v;
+  if (REDUCED || from === to) { el._v = to; el.textContent = fmt(to); return; }
+  if (el._raf) cancelAnimationFrame(el._raf);
+  var t0 = null;
+  function step(ts) {
+    if (t0 === null) t0 = ts;
+    var p = Math.min(1, (ts - t0) / 650), e = 1 - Math.pow(1 - p, 3);
+    el._v = from + (to - from) * e;
+    el.textContent = fmt(el._v);
+    if (p < 1) el._raf = requestAnimationFrame(step);
+    else { el._v = to; el.textContent = fmt(to); }
+  }
+  el._raf = requestAnimationFrame(step);
+}
+
+/* ---------- control builders ---------- */
+var ROFMT = { "item.audLog": function (v) { return fmtAud(v); } };
+
+function sliderField(g, f, label, min, max, step, unit, ro) {
+  var v = state[g][f], attrs = ' data-g="' + g + '" data-f="' + f + '" min="' + min + '" max="' + max + '" step="' + step + '"';
+  var h = '<div class="field-row"><label>' + label + (unit ? ' <span class="unit">' + unit + '</span>' : '') + '</label><div class="slider-pair">';
+  h += '<input type="range"' + attrs + ' value="' + v + '" style="--pct:' + pct(v, min, max) + '%" aria-label="' + label + '">';
+  if (ro) h += '<span class="readout" data-ro="' + g + '.' + f + '">' + ROFMT[g + "." + f](v) + '</span>';
+  else h += '<input type="number"' + attrs + ' value="' + v + '" aria-label="' + label + ' value">';
+  return h + '</div></div>';
+}
+function selectField(g, f, label, opts) {
+  var v = state[g][f], h = '<div class="field-row"><label>' + label + '</label><select data-g="' + g + '" data-f="' + f + '" aria-label="' + label + '">';
+  opts.forEach(function (o) { h += '<option value="' + o[0] + '"' + (parseFloat(o[0]) === v ? " selected" : "") + '>' + o[1] + '</option>'; });
+  return h + '</select></div>';
+}
+function checkField(g, f, label) {
+  return '<label class="checkbox-row"><input type="checkbox" data-g="' + g + '" data-f="' + f + '"' + (state[g][f] ? " checked" : "") + '> ' + label + '</label>';
+}
+
+function buildControls() {
+  var P = PRESETS[state.preset], L = state.labels;
+  $("ctlVolume").innerHTML =
+    sliderField("volume", "perDay", "Outputs produced", 1000, 200000, 1000, "per day") +
+    sliderField("volume", "reviewers", "Reviewers", 1, 200, 1, "people") +
+    sliderField("volume", "hours", "Review hours per reviewer", 1, 8, 0.5, "per day") +
+    sliderField("volume", "minPer", "Minutes per review", 0.5, 10, 0.5, "min") +
+    sliderField("volume", "specX", "Specialist time multiplier", 1, 6, 0.5, "x tier 2");
+  $("ctlThresh").innerHTML =
+    sliderField("thresholds", "t1", "Tier 0 below", 0, 30, 0.5, "risk") +
+    sliderField("thresholds", "t2", "Tier 1 below", 0, 60, 0.5, "risk") +
+    sliderField("thresholds", "t3", "Tier 2 below", 0, 80, 0.5, "risk") +
+    sliderField("thresholds", "t4", "Tier 3 below, then block", 0, 100, 1, "risk") +
+    sliderField("thresholds", "med", "Medium priority from", 0, 60, 0.5, "risk") +
+    sliderField("thresholds", "high", "High priority from", 0, 60, 0.5, "risk") +
+    '<div class="warn-line" id="thWarn" hidden>Thresholds must ascend; values are adjusted for the calculation.</div>';
+  $("ctlSamp").innerHTML =
+    sliderField("sampling", "t0", "Sample of tier 0", 0, 30, 0.5, "%") +
+    sliderField("sampling", "t1", "Sample of tier 1", 0, 30, 0.5, "%") +
+    sliderField("sampling", "seeded", "Seeded errors in queue", 0, 10, 0.5, "%");
+  var w = "";
+  WKEYS.forEach(function (k) { w += sliderField("weights", k, WLABELS[k], 0, 1, 0.05, ""); });
+  $("ctlWeights").innerHTML = w;
+  $("ctlImpact").innerHTML =
+    sliderField("impact", "minImp", "Minimum impact (floor)", 0, 0.5, 0.05, "") +
+    sliderField("impact", "reachX", "Reach scale", 0.5, 1.5, 0.05, "x") +
+    sliderField("impact", "moneyX", "Money / contract scale", 0.5, 1.5, 0.05, "x") +
+    checkField("flags", "earned", "Verified " + L.claim.toLowerCase() + " has earned auto-approve (skips the specialist gate)");
+
+  $("ctlItem").innerHTML =
+    '<div class="group-title">Audience and claim</div>' +
+    sliderField("item", "audLog", "Audience size", 2.7, 7, 0.05, "", true) +
+    selectField("item", "claim", L.claim, P.claimOpts) +
+    selectField("item", "verified", "Claim verification", [["1", "Verified against rules engine / catalogue"], ["0", "Fails verification"]]) +
+    selectField("item", "chan", "Channel (reversibility)", [["0.2", "Email"], ["0.5", "SMS"], ["0.8", "Push"], ["1", "Paid media or print"]]) +
+    selectField("item", "ent", "Entity risk", P.entOpts) +
+    selectField("item", "vis", "Visibility", [["0.2", "Routine"], ["0.7", "Press-exposed"], ["1", "Executive or crisis-adjacent"]]) +
+    '<div class="group-title">Gate triggers</div>' +
+    checkField("item", "lex", "Contains a regulated-claim term") +
+    checkField("item", "off", L.off) +
+    checkField("item", "dis", L.dis) +
+    checkField("item", "newT", "New template, segment or model") +
+    selectField("item", "pol", "Policy check result", [["0", "Clean"], ["0.5", "Possible violation"], ["1", "Definite violation"]]) +
+    '<div class="group-title">Uncertainty signals</div>' +
+    sliderField("item", "conf", "Model confidence", 0, 100, 1, "%") +
+    sliderField("item", "cons", "Regenerations disagree", 0, 100, 1, "%") +
+    sliderField("item", "chk", "Checker disagrees", 0, 100, 1, "%") +
+    sliderField("item", "nov", "Novelty", 0, 100, 1, "%") +
+    sliderField("item", "tmpl", "Weak template history", 0, 100, 1, "%");
+
+  document.querySelectorAll("[data-preset]").forEach(function (b) {
+    if (b.getAttribute("data-preset") === state.preset) b.classList.add("active"); else b.classList.remove("active");
+  });
+}
+
+function onField(e) {
+  var t = e.target;
+  if (!t || !t.getAttribute) return;
+  var g = t.getAttribute("data-g"), f = t.getAttribute("data-f");
+  if (!g || !f) return;
+  var v;
+  if (t.type === "checkbox") v = t.checked ? 1 : 0;
+  else {
+    v = parseFloat(t.value);
+    if (isNaN(v)) return;
+    if (t.type === "number") {
+      v = clamp(v, parseFloat(t.min), parseFloat(t.max));
+    }
+  }
+  state[g][f] = v;
+  if (t.type === "range" || t.type === "number") {
+    var mn = parseFloat(t.min), mx = parseFloat(t.max);
+    document.querySelectorAll('[data-g="' + g + '"][data-f="' + f + '"]').forEach(function (o) {
+      if (o !== t && o.type === "range") o.value = v;
+      if (o !== t && o.type === "number") o.value = v;
+      if (o.type === "range") o.style.setProperty("--pct", pct(v, mn, mx) + "%");
+    });
+    var ro = document.querySelector('[data-ro="' + g + "." + f + '"]');
+    if (ro) ro.textContent = ROFMT[g + "." + f](v);
+  }
+  scheduleRender();
+}
+
+/* ---------- segment bars ---------- */
+function setSegs(cont, items, total) {
+  if (cont._n !== items.length) {
+    cont.innerHTML = items.map(function () { return '<div class="seg"><span></span></div>'; }).join("");
+    cont._n = items.length;
+  }
+  items.forEach(function (it, i) {
+    var w = total > 0 ? it.val / total * 100 : 0, el = cont.children[i];
+    el.style.width = w + "%"; el.style.background = it.color;
+    el.setAttribute("data-tip", it.label + ": " + fmtInt(it.val) + " (" + w.toFixed(1) + "%)");
+    el.firstChild.textContent = w >= 12 ? it.label + " " + w.toFixed(0) + "%" : (w >= 5 ? w.toFixed(0) + "%" : "");
+    el.firstChild.style.color = it.ink || "#fff";
+  });
+}
+function legend(items) {
+  return items.map(function (it) {
+    return '<span><i class="dot" style="background:' + it.color + '"></i>' + it.label + ' <b>' + fmtInt(it.val) + '</b></span>';
+  }).join("");
+}
+
+/* ---------- render ---------- */
+var rq = false;
+function scheduleRender() {
+  if (rq) return; rq = true;
+  requestAnimationFrame(function () { rq = false; render(); });
+}
+
+function render() {
+  R = simulate(pop, state);
+  var th = state.thresholds;
+  var warn = $("thWarn"); if (warn) warn.hidden = thOk(th);
+  renderKPIs(); renderProblem(); renderFunnel(); renderTester(); renderSim(); renderQueue();
+}
+
+function statusText(s) { return s === "ok" ? "Within budget" : s === "warn" ? "Near limit" : "Bottleneck"; }
+function setChip(el, s, text) { el.className = "chip " + s; el.textContent = text; }
+
+function renderKPIs() {
+  countUp($("kStages"), 5);
+  countUp($("kAuto"), R.auto * 100, fmtPct);
+  countUp($("kLoad"), R.util * 100, fmtPct);
+  $("kLoadCap").textContent = statusText(R.status).toLowerCase() + " · review capacity";
+  setChip($("topChip"), R.status, "Load " + Math.round(R.util * 100) + "% · " + statusText(R.status));
+}
+
+function renderProblem() {
+  var scale = Math.max(R.allMin, R.capMin) * 1.05;
+  $("mAFill").style.width = (R.allMin / scale * 100) + "%";
+  $("mCFill").style.width = (R.minutes / scale * 100) + "%";
+  $("mACap").style.left = (R.capMin / scale * 100) + "%";
+  $("mCCap").style.left = (R.capMin / scale * 100) + "%";
+  $("mAText").textContent = fmtInt(R.allMin / 60) + " review-hours/day needed vs " + fmtInt(R.capMin / 60) + " available (" + R.needAll + " reviewers)";
+  $("mCText").textContent = fmtInt(R.minutes / 60) + " review-hours/day needed vs " + fmtInt(R.capMin / 60) + " available (" + R.need + " reviewers)";
+}
+
+function renderFunnel() {
+  var perDay = state.volume.perDay;
+  $("fTotal").textContent = fmtInt(perDay) + " outputs";
+  setSegs($("fTop"), [{ label: "All outputs", val: perDay, color: "var(--series-1)" }], perDay);
+  var gi = [
+    { label: "Pass to scoring", val: R.g.pass, color: "var(--series-3)" },
+    { label: "Forced to a tier", val: R.g.force, color: "var(--t2)", ink: "#0a0a0f" },
+    { label: "Blocked", val: R.g.block, color: "var(--t4)" },
+    { label: "Held", val: R.g.hold, color: "var(--th)" }];
+  setSegs($("fGate"), gi, perDay); $("fGateLeg").innerHTML = legend(gi);
+  var ti = [
+    { label: "T0 Auto", val: R.d[0], color: "var(--t0)" }, { label: "T1 Auto + sample", val: R.d[1], color: "var(--t1)" },
+    { label: "T2 Reviewer", val: R.d[2], color: "var(--t2)", ink: "#0a0a0f" }, { label: "T3 Specialist", val: R.d[3], color: "var(--t3)" },
+    { label: "T4 Block", val: R.d[4], color: "var(--t4)" }, { label: "Held", val: R.d[5], color: "var(--th)" }];
+  setSegs($("fTier"), ti, perDay); $("fTierLeg").innerHTML = legend(ti);
+  var hi = [
+    { label: "Reviewer queue", val: R.d[2], color: "var(--t2)", ink: "#0a0a0f" }, { label: "Specialist queue", val: R.d[3], color: "var(--t3)" },
+    { label: "QA samples", val: R.s0 + R.s1, color: "var(--t0)" }, { label: "Seeded errors", val: R.seeded, color: "var(--th)" }];
+  setSegs($("fHuman"), hi, perDay); $("fHumanLeg").innerHTML = legend(hi);
+  $("fHumanSub").textContent = fmtInt(R.human) + " items to humans = " + (R.human / perDay * 100).toFixed(1) + "% of volume";
+  setSegs($("sTier"), ti, perDay); $("sTierLeg").innerHTML = legend(ti);
+}
+
+function barRow(label, v, cls) {
+  return '<div class="barrow ' + (cls || "") + '"><span class="lb">' + label + '</span><div class="btrack"><div class="bfill" style="width:' + (clamp(v, 0, 1) * 100) + '%"></div></div><span class="vl">' + v.toFixed(2) + '</span></div>';
+}
+
+function renderTester() {
+  var it = testerItem(state), r = route(it, state), L = state.labels;
+  var h = "";
+  r.trace.forEach(function (g) {
+    var cls = "", ic = "✓";
+    if (g.fired) { cls = g.eff === "block" ? "block" : g.eff === "hold" ? "hold" : "fired"; ic = g.eff === "block" ? "✕" : g.eff === "hold" ? "⏸" : "▲"; }
+    h += '<li class="' + cls + '"><span class="ic">' + ic + '</span><span class="tx">' + g.label + '</span><span class="ac">' + (g.fired ? g.action : "clear") + '</span></li>';
+  });
+  $("trace").innerHTML = h;
+  h = "";
+  WKEYS.forEach(function (k) { h += barRow(WLABELS[k] + " (w " + state.weights[k].toFixed(2) + " × s " + it.s[k].toFixed(2) + ")", clamp(state.weights[k] * it.s[k], 0, 1)); });
+  $("pBars").innerHTML = h;
+  var d = r.imp.dims, names = { reach: "Reach (" + fmtAud(it.audLog) + ")", money: "Money / contractual", rev: "Reversibility", ent: "Entity risk", vis: "Visibility" };
+  var maxK = "reach";
+  Object.keys(d).forEach(function (k) { if (d[k] > d[maxK]) maxK = k; });
+  h = "";
+  Object.keys(d).forEach(function (k) { h += barRow(names[k], d[k], k === maxK && d[k] >= state.impact.minImp ? "max" : ""); });
+  $("iBars").innerHTML = h;
+  $("vP").textContent = r.P.toFixed(3);
+  $("vI").textContent = r.imp.value.toFixed(2);
+  $("vR").textContent = r.risk.toFixed(1);
+  var tb = $("vTier"); tb.textContent = TIER_NAMES[r.tier]; tb.style.background = TIER_COLORS[r.tier];
+  if (r.tier === 2) tb.style.color = "#0a0a0f"; else tb.style.color = "#fff";
+  var why;
+  if (r.gate === "block" || r.gate === "hold") why = "A hard gate decided this. The score (" + r.risk.toFixed(1) + ", " + TIER_NAMES[r.scoreTier].split(" ·")[0] + " alone) did not matter.";
+  else if (r.gate === "force" && r.minT > r.scoreTier) why = "The score alone gives " + TIER_NAMES[r.scoreTier].split(" ·")[0] + "; a gate raised it to " + TIER_NAMES[r.tier].split(" ·")[0] + ".";
+  else {
+    var top = r.contribs.filter(function (c) { return c.v >= 0.03; }).slice(0, 2).map(function (c) { return WLABELS[c.k].toLowerCase(); });
+    why = "Decided by score. Biggest drivers: " + (top.length ? top.join(" and ") : "none above 0.03") + "; impact set by " + names[maxK].split(" (")[0].toLowerCase() + ".";
+  }
+  $("vWhy").textContent = why;
+}
+
+function renderSim() {
+  setChip($("simStatus"), R.status, statusText(R.status) + " · " + Math.round(R.util * 100) + "% used");
+  var uf = $("utilFill");
+  uf.style.width = (clamp(R.util / 1.5, 0, 1) * 100) + "%";
+  uf.style.background = R.status === "ok" ? "var(--series-3)" : R.status === "warn" ? "var(--series-4)" : "var(--series-8)";
+  $("utilText").textContent = fmtInt(R.minutes / 60) + " review-hours needed vs " + fmtInt(R.capMin / 60) + " available per day. White line = 100% of capacity.";
+  countUp($("sHuman"), R.human); $("sHumanCap").textContent = (R.human / state.volume.perDay * 100).toFixed(1) + "% of volume";
+  countUp($("sNeed"), R.need); $("sNeedCap").textContent = "vs " + fmtInt(R.needAll) + " if everything is reviewed";
+  countUp($("sAuto"), R.auto * 100, fmtPct);
+  countUp($("sHigh"), R.tags.High); countUp($("sMed"), R.tags.Medium); countUp($("sLow"), R.tags.Low);
+  countUp($("sStop"), R.stopped); countUp($("sEsc"), R.escaped); countUp($("sEscPct"), R.escPct * 100, fmtPct);
+  var cut = R.needAll > 0 ? (1 - R.need / R.needAll) * 100 : 0;
+  var msg = "<b>Applies now:</b> routing needs " + R.need + " reviewer" + (R.need === 1 ? "" : "s") + " instead of " + fmtInt(R.needAll) + " for review-everything (" + cut.toFixed(0) + "% fewer). ";
+  if (R.status === "bad") msg += "You have " + state.volume.reviewers + ", a shortfall of " + Math.max(0, R.need - state.volume.reviewers) + ": raise the tier 2 threshold, add reviewers, or approve templates once instead of every instance.";
+  else if (R.status === "warn") msg += "Capacity is nearly used up; a spike in volume would create a queue.";
+  else msg += "There is headroom for the queue, sampling and seeded errors.";
+  $("insight").innerHTML = msg;
+}
+
+/* ---------- pipeline ---------- */
+var PIPE = [
+  { n: "Idea filtering", ai: "Picks campaign ideas from trends and performance data.", fail: "Off-brand, tone-deaf or badly timed ideas; duplicates.", post: "Light: sample-based, escalate on sensitive themes." },
+  { n: "Audience understanding", ai: "Segments and targets using behaviour data.", fail: "Privacy violations, sensitive inference, discriminatory segmentation, over-personalisation.", post: "Hard gates on which attributes may be used; humans review new segment definitions." },
+  { n: "Content creation", ai: "Generates text, image and video.", fail: "Hallucinated claims, wrong prices or offers, copyright or likeness issues, brand drift.", post: "Automated checks first; humans on flagged items." },
+  { n: "Governance & approval", ai: "Checks content against policy, compliance and brand rules.", fail: "The AI checker shares blind spots with the generator.", post: "Independent checker; humans on disagreements." },
+  { n: "Distribution", ai: "Chooses channels, timing and audience size.", fail: "Wrong audience, blast-radius errors, frequency or consent violations.", post: "Strictest gate, tiered by reach and reversibility; kill switch." }
+];
+function buildPipeline() {
+  var h = "";
+  PIPE.forEach(function (p, i) {
+    if (i) h += '<div class="conn" aria-hidden="true"><i style="animation-delay:' + (i * 0.3) + 's"></i></div>';
+    h += '<button type="button" class="stage-btn' + (i === 2 ? " on" : "") + '" data-stage="' + i + '"><div class="n">Stage ' + (i + 1) + '</div><div class="nm">' + p.n + '</div></button>';
+  });
+  $("pipe").innerHTML = h;
+  showStage(2);
+}
+function showStage(i) {
+  var p = PIPE[i];
+  document.querySelectorAll(".stage-btn").forEach(function (b) { b.classList.toggle("on", b.getAttribute("data-stage") === String(i)); });
+  var el = $("stageDetail"), clone = el.cloneNode(false);
+  clone.innerHTML =
+    '<div><div class="dl-label">AI task</div><div class="dl-val">' + p.ai + '</div></div>' +
+    '<div><div class="dl-label">Typical failure</div><div class="dl-val">' + p.fail + '</div></div>' +
+    '<div><div class="dl-label">Review posture</div><div class="dl-val">' + p.post + '</div></div>';
+  el.parentNode.replaceChild(clone, el);
+}
+
+/* ---------- reviewer ---------- */
+var rv = { sel: null, done: {}, opened: {}, pending: null, streak: 0, decided: 0, fast: 0, sig: "", log: [] };
+var REASONS = [["", "Choose a reason category"], ["facts", "Factual or price error"], ["policy", "Policy or compliance"], ["brand", "Brand or tone"], ["target", "Targeting or privacy"], ["other", "Other"]];
+
+function topDimName(r, it) {
+  var d = r.imp.dims, k = "reach";
+  Object.keys(d).forEach(function (x) { if (d[x] > d[k]) k = x; });
+  return { reach: "reach (" + fmtAud(it.audLog) + ")", money: "stated value", rev: "low reversibility of the channel", ent: "entity risk", vis: "visibility" }[k];
+}
+function primaryKind(r) {
+  var order = ["ver", "lex", "ppos", "nw"], i;
+  for (i = 0; i < order.length; i++) {
+    for (var j = 0; j < r.trace.length; j++) if (r.trace[j].id === order[i] && r.trace[j].fired) return order[i];
+  }
+  return "sig";
+}
+function reasonLines(x) {
+  var out = [];
+  x.r.trace.forEach(function (g) { if (g.fired) out.push(g.label + " → " + g.action); });
+  x.r.contribs.slice(0, 2).forEach(function (c) { if (c.v >= 0.05) out.push(WLABELS[c.k] + ": contributes " + c.v.toFixed(2)); });
+  out.push("Impact driven by " + topDimName(x.r, x.it));
+  return out;
+}
+function ageOf(id) { return 3 + (id * 7) % 90; }
+
+function renderQueue() {
+  var rank = { High: 0, Medium: 1, Low: 2 };
+  var list = R.items.filter(function (x) { return x.r.tag && !rv.done[x.id]; })
+    .sort(function (a, b) { return rank[a.r.tag] - rank[b.r.tag] || ageOf(b.id) - ageOf(a.id); });
+  var shown = list.slice(0, 7);
+  $("qCounts").textContent = list.length + " in this sample · " + fmtInt(R.tags.High + R.tags.Medium + R.tags.Low) + " per day";
+  var sig = shown.map(function (x) { return x.id + x.r.tag; }).join(",") + "|" + list.length + "|" + rv.sel;
+  if (sig !== rv.sig) {
+    rv.sig = sig;
+    var h = "";
+    shown.forEach(function (x) {
+      var rs = reasonLines(x)[0];
+      h += '<button type="button" class="qitem' + (rv.sel === x.id ? " sel" : "") + '" data-q="' + x.id + '"><span class="tag ' + x.r.tag + '">' + x.r.tag + '</span><span><div class="q1">' + STAGES[x.it.stage] + ' · T' + x.r.tier + '</div><div class="q2">' + rs + '</div></span><span class="age">' + ageOf(x.id) + ' min</span></button>';
+    });
+    if (list.length > shown.length) h += '<div class="empty">+ ' + (list.length - shown.length) + ' more, lower priority</div>';
+    if (!list.length) h = '<div class="empty">Queue clear. Raise volume or lower the thresholds to refill it.</div>';
+    $("queueList").innerHTML = h;
+  }
+  var selStill = rv.sel != null && list.some(function (x) { return x.id === rv.sel; });
+  if (rv.sel != null && !selStill) { rv.sel = null; }
+  if (rv.sel == null) renderDetail();
+  renderStats();
+}
+
+function renderDetail() {
+  var box = $("qDetail");
+  if (rv.sel == null) { box.innerHTML = '<div class="empty">Select an item. You will see why it was flagged and the evidence, but no recommendation.</div>'; return; }
+  var x = R.items[rv.sel], sn = PRESETS[state.preset].snippets[primaryKind(x.r)];
+  var h = '<div class="frow-head" style="margin-top:0"><span class="frow-title"><span class="tag ' + x.r.tag + '">' + x.r.tag + '</span> ' + STAGES[x.it.stage] + '</span><span class="frow-sub">' + TIER_NAMES[x.r.tier].split(" ·")[0] + '</span></div>';
+  h += '<div class="dl-label">Output (sample copy)</div><div class="copybox">' + sn[0] + '</div>';
+  h += '<div class="dl-label">Why it was flagged</div><ul class="ev">';
+  reasonLines(x).forEach(function (l) { h += '<li>' + l + '</li>'; });
+  h += '<li>' + sn[1] + '</li></ul>';
+  h += '<div class="decide"><button class="btn small primary" type="button" data-act="approve">Approve</button><button class="btn small" type="button" data-act="edit">Edit</button><button class="btn small" type="button" data-act="reject">Reject</button>';
+  h += '</div>';
+  if (rv.pending) {
+    h += '<div class="decide" style="margin-top:8px"><select id="rvReason" style="width:auto;min-width:200px" aria-label="Reason category">';
+    REASONS.forEach(function (o) { h += '<option value="' + o[0] + '">' + o[1] + '</option>'; });
+    h += '</select><button class="btn small primary" type="button" data-act="confirm">Confirm ' + rv.pending + '</button></div>';
+  }
+  h += '<div class="msg" id="rvMsg"></div>';
+  box.innerHTML = h;
+  rv.opened[rv.sel] = rv.opened[rv.sel] || Date.now();
+}
+
+function renderStats() {
+  $("rvStats").innerHTML = '<span>Decisions <b>' + rv.decided + '</b></span><span>Fast approvals <b>' + rv.fast + '</b></span><span>Approval streak <b>' + rv.streak + '</b></span>';
+  $("rvAlert").className = "msg" + (rv.streak >= 5 ? " err" : "");
+  $("rvAlert").textContent = rv.streak >= 5 ? "Streak of " + rv.streak + " approvals: the Risk & Policy Owner is notified." : "";
+  $("rvLog").innerHTML = rv.log.slice(-4).reverse().map(function (l) { return '<div class="logline">' + l + '</div>'; }).join("");
+}
+
+function decide(kind, reason) {
+  var x = R.items[rv.sel], secs = (Date.now() - (rv.opened[rv.sel] || Date.now())) / 1000;
+  rv.done[rv.sel] = true; rv.decided++;
+  var note = "";
+  if (kind === "approve") {
+    rv.streak++;
+    if (secs < 3) { rv.fast++; note = " · flagged as fast approval"; }
+  } else rv.streak = 0;
+  rv.log.push(kind + " · " + STAGES[x.it.stage] + " · " + x.r.tag + (reason ? " · " + reason : "") + " · " + secs.toFixed(1) + "s" + note);
+  if (kind === "approve") rv.log[rv.log.length - 1] += " · released to next stage";
+  else if (kind === "edit") rv.log[rv.log.length - 1] += " · edited output released after gate re-check";
+  else rv.log[rv.log.length - 1] += " · blocked; campaign manager notified";
+  rv.sel = null; rv.pending = null; rv.sig = "";
+  renderQueue();
+}
+
+/* ---------- kill switch ---------- */
+var ks = { items: [], active: null, step: 0, log: [], timers: [] };
+var KSSTEPS = ["External event", "Suppression triggered", "Matching outputs held", "Owners notified", "Lifted and re-scored", "Audit trail recorded"];
+function buildKs() {
+  var P = PRESETS[state.preset];
+  ks.timers.forEach(clearTimeout); ks.timers = [];
+  ks.items = P.ksItems.map(function (a, i) { return { id: i, n: a[0], aud: a[1], ch: a[2], t: "in " + (1 + (i * 37) % 5) + "h " + ((i * 13) % 6) * 10 + "m", st: "sched" }; });
+  ks.step = 0; ks.log = [];
+  $("ksMsg").textContent = "";
+  ksOptions();
+  renderKs();
+}
+function ksOptions() {
+  var free = ks.items.filter(function (it) { return it.st !== "held"; });
+  var held = ks.items.filter(function (it) { return it.st === "held"; });
+  fillSelect($("ksScope"), free, "All campaigns not suppressed");
+  fillSelect($("ksLiftScope"), held, "All suppressed campaigns");
+  $("ksTrigger").disabled = !free.length;
+  $("ksLift").disabled = !held.length;
+  $("ksScope").disabled = !free.length;
+  $("ksLiftScope").disabled = !held.length;
+}
+function fillSelect(sel, list, allLabel) {
+  var prev = sel.value, s = "";
+  if (!list.length) s = '<option value="">None</option>';
+  else {
+    if (list.length > 1) s += '<option value="All">' + allLabel + '</option>';
+    list.forEach(function (it) { s += '<option value="' + it.id + '">' + it.n + '</option>'; });
+  }
+  sel.innerHTML = s;
+  if (prev && sel.querySelector('option[value="' + prev + '"]')) sel.value = prev;
+}
+function ksTargets(sel, status) {
+  var v = sel.value;
+  return ks.items.filter(function (it) { return status(it) && (v === "All" || String(it.id) === v); });
+}
+function renderKs() {
+  var h = "";
+  KSSTEPS.forEach(function (s, i) { h += '<div class="step' + (ks.step > i ? " on" : "") + '">' + (i + 1) + '. ' + s + '</div>'; });
+  $("ksSteps").innerHTML = h;
+  h = "";
+  ks.items.forEach(function (it) {
+    var label = it.st === "sched" ? "Scheduled" : it.st === "held" ? "Held by suppression" : "Re-scored → Reviewer queue";
+    h += '<div class="ksitem ' + it.st + '"><b>' + it.n + '</b><span>' + it.aud + ' · ' + it.ch + '<br>send ' + it.t + '</span><span class="st">' + label + '</span></div>';
+  });
+  $("ksGrid").innerHTML = h;
+  $("ksLog").innerHTML = ks.log.slice(-4).reverse().map(function (l) { return '<div class="logline">' + l + '</div>'; }).join("");
+}
+function ksStepTo(n, delay, cb) {
+  var tm = setTimeout(function () { ks.step = Math.max(ks.step, n); renderKs(); if (cb) cb(); }, REDUCED ? 0 : delay);
+  ks.timers.push(tm);
+}
+function ksClearTimers() { ks.timers.forEach(clearTimeout); ks.timers = []; }
+function ksNames(list) { return list.map(function (it) { return it.n; }).join(", "); }
+function ksTrigger() {
+  var list = ksTargets($("ksScope"), function (it) { return it.st !== "held"; });
+  if (!list.length) return;
+  var n = list.length;
+  list.forEach(function (it) { it.st = "held"; });
+  ks.log.push("Suppression triggered · " + ksNames(list) + " · reason: operational disruption · by Platform Administrator");
+  ksClearTimers(); ks.step = 0;
+  ksStepTo(1, 0); ksStepTo(2, 350); ksStepTo(3, 700);
+  ksStepTo(4, 1050, function () {
+    $("ksMsg").textContent = "Notified: campaign managers with affected outputs and the Risk & Policy Owner. " + n + " campaign" + (n === 1 ? "" : "s") + " held.";
+  });
+  ksOptions();
+  renderKs();
+}
+function ksLift() {
+  var list = ksTargets($("ksLiftScope"), function (it) { return it.st === "held"; });
+  if (!list.length) return;
+  var n = list.length;
+  list.forEach(function (it) { it.st = "queued"; });
+  ks.log.push("Suppression lifted · " + ksNames(list) + " · re-evaluated through gates and scoring; send time passed, so none sent automatically");
+  ksClearTimers(); ks.step = Math.max(ks.step, 4);
+  ksStepTo(5, 0);
+  ksStepTo(6, 450, function () {
+    $("ksMsg").textContent = "Lifted: " + n + " campaign" + (n === 1 ? "" : "s") + " went back through scoring and " + (n === 1 ? "is" : "are") + " in the Reviewer queue. Event recorded in the audit trail.";
+    ks.log.push("Audit record written · suppression trigger and lift, with campaign, reason and user");
+    renderKs();
+  });
+  ksOptions();
+  renderKs();
+}
+
+/* ---------- PRD content ---------- */
+var AREAS = [
+  ["Signal capture & gates", ["Capture signal bundle per output", "Evaluate hard gates", "Check outputs against the policy knowledge base", "Check entity risk and bias"]],
+  ["Risk scoring & tiering", ["Compute risk score", "Assign tier and route", "Default new things to human review"]],
+  ["Sampling & seeded errors", ["Random sampling of auto-approved outputs", "Seed known errors into review queues"]],
+  ["Reviewer queue & workbench", ["Tag and order review queue items by risk priority", "Show evidence, not a verdict", "Record a structured reviewer decision", "Act on the reviewer decision", "Detect passive approval", "Alert on queue capacity breach"]],
+  ["Feedback, calibration & metrics", ["Capture decisions as calibration data", "Report metrics", "Propose tier changes from override evidence"]],
+  ["Configuration & shadow mode", ["Configure a use case", "Run a configuration in shadow mode", "Version and activate a configuration"]],
+  ["Suppression & kill switch", ["Trigger suppression", "Hold matching outputs", "Notify on suppression", "Lift suppression and re-route"]],
+  ["Audit & logging", ["Keep an audit trail"]]
+];
+var JOURNEYS = [
+  ["Output flows through auto-approve", ["Stage produces output; signals captured", "Hard gates evaluated, none fire", "Risk score computed, tier 0 or 1", "Auto-approved to next stage", "Random sample pulled for QA", "Breakdown and decision logged"]],
+  ["Output is flagged and reviewed", ["Gate fires or tier 2/3: output held", "Placed in queue with High/Medium/Low tag", "Reviewer sees signals and evidence, no verdict", "Approve, edit or reject with reason", "Output released, revised or blocked", "Decision feeds metrics and calibration"]],
+  ["Administrator configures a use case", ["Create use case and select stages", "Define gates, off-limits attributes, lexicon", "Set weights, impact scales, thresholds", "Set sampling, seeded rate, capacity", "Run in shadow mode", "Review calibration; activate with owner approval"]],
+  ["Kill switch during an incident", ["External event occurs", "Authorised user triggers suppression", "Matching outputs held at once", "Owners notified", "Suppression lifted; held outputs re-scored", "Event recorded in audit trail"]]
+];
+function buildPrd() {
+  var h = "";
+  AREAS.forEach(function (a, i) {
+    h += '<details' + (i === 0 ? " open" : "") + '><summary>' + a[0] + '</summary><ul>';
+    a[1].forEach(function (r) { h += '<li>' + r + '</li>'; });
+    h += '</ul></details>';
+  });
+  $("areas").innerHTML = h;
+  h = "";
+  JOURNEYS.forEach(function (j) {
+    h += '<div class="card sub" style="margin-bottom:8px"><h3>' + j[0] + '</h3><div class="chips">';
+    j[1].forEach(function (s, i) { h += '<span><b>' + (i + 1) + '</b>' + s + '</span>'; });
+    h += '</div></div>';
+  });
+  $("journeys").innerHTML = h;
+}
+
+/* ---------- init ---------- */
+function loadPreset(key) {
+  state = makeState(key);
+  pop = genPop(PRESETS[key].mix, 600, PRESETS[key].seed);
+  rv = { sel: null, done: {}, opened: {}, pending: null, streak: 0, decided: 0, fast: 0, sig: "", log: [] };
+  buildControls(); buildKs(); render();
+}
+
+function init() {
+  var t = $("ticks"), h = "";
+  for (var i = 0; i < 24; i++) h += '<i style="animation-delay:' + (i * 0.08) + 's">✓</i>';
+  t.innerHTML = h;
+  var s = "";
+  for (i = 0; i < 16; i++) s += '<i style="animation-delay:' + (i * 0.31) + 's;top:' + (2 + (i * 5) % 9) + 'px"></i>';
+  $("stream").innerHTML = s;
+  buildPipeline(); buildPrd();
+  loadPreset("airline");
+
+  document.addEventListener("input", onField);
+  document.addEventListener("change", onField);
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest ? e.target.closest("button") : null;
+    if (!b) return;
+    var p = b.getAttribute("data-preset");
+    if (p) { loadPreset(p); return; }
+    if (b.id === "resetBtn") { loadPreset(state.preset); return; }
+    var sg = b.getAttribute("data-stage");
+    if (sg != null) { showStage(parseInt(sg, 10)); return; }
+    var q = b.getAttribute("data-q");
+    if (q != null) { rv.sel = parseInt(q, 10); rv.pending = null; rv.sig = ""; renderQueue(); renderDetail(); return; }
+    var act = b.getAttribute("data-act");
+    if (act) {
+      if (act === "approve") { decide("approve"); return; }
+      if (act === "edit" || act === "reject") { rv.pending = act; renderDetail(); return; }
+      if (act === "confirm") {
+        var rs = $("rvReason").value;
+        if (!rs) { var m = $("rvMsg"); m.className = "msg err"; m.textContent = "A reason category is required to " + rv.pending + "."; return; }
+        decide(rv.pending, rs); return;
+      }
+    }
+    if (b.id === "ksTrigger") ksTrigger();
+    else if (b.id === "ksLift") ksLift();
+    else if (b.id === "ksReset") buildKs();
+  });
+
+  var tip = $("tip");
+  document.addEventListener("mousemove", function (e) {
+    var el = e.target.closest ? e.target.closest("[data-tip]") : null;
+    if (!el) { tip.style.opacity = 0; return; }
+    tip.textContent = el.getAttribute("data-tip");
+    tip.style.left = Math.min(e.clientX + 12, window.innerWidth - 230) + "px";
+    tip.style.top = (e.clientY + 14) + "px";
+    tip.style.opacity = 1;
+  });
+
+  var revs = document.querySelectorAll(".reveal");
+  if ("IntersectionObserver" in window && !REDUCED) {
+    var io = new IntersectionObserver(function (ents) {
+      ents.forEach(function (en) { if (en.isIntersecting) { en.target.classList.add("in"); io.unobserve(en.target); } });
+    }, { threshold: 0.12 });
+    revs.forEach(function (r) { io.observe(r); });
+  } else revs.forEach(function (r) { r.classList.add("in"); });
+}
+
+init();
+})();
+</script>
+</body>
+</html>
